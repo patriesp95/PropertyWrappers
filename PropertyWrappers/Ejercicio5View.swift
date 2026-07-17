@@ -68,7 +68,7 @@ struct Ejercicio5View: View {
                     isEditing = false
                     isDeleting = false
                     tempTask = nil
-                    showingSheet.toggle()
+                    showingSheet = true
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .resizable()
@@ -108,12 +108,13 @@ struct Ejercicio5View: View {
         .sheet(isPresented: $showingSheet) {
             Ejercicio5ViewSheet(
                 onDelete: { task in
+                    isDeleting = true
                     tasks.removeAll { $0.id == task.id }
-                    print(tasks)
                 },
                 onSave: { task in
                     if let index = tasks.firstIndex(where: { $0.id == task.id })
                     {
+                        isEditing = true
                         tasks[index] = task
                     } else {
                         tasks.append(task)
@@ -180,14 +181,8 @@ struct Ejercicio5ViewSheet: View {
     @State var title: String = ""
     @State var priority: Bool = false
 
-    var isTempTaskNameValid: Bool {
+    var isTaskNameValid: Bool {
         !title.isEmpty
-    }
-
-    var isNewTaskTitleValid: Bool {
-        let newTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !newTitle.isEmpty
-
     }
 
     var isUserEditingATask: Bool {
@@ -195,8 +190,23 @@ struct Ejercicio5ViewSheet: View {
     }
 
     var buttonOpacity: Double {
-        isUserEditingATask && !isTempTaskNameValid
-            || !isUserEditingATask && !isNewTaskTitleValid ? 0.5 : 1
+        if isUserEditingATask {
+            return 1
+        } else if !isUserEditingATask && isTaskNameValid {
+            return 1
+        } else {
+            return 0.5
+        }
+    }
+    
+    var buttonDisability: Bool {
+        if isUserEditingATask {
+            return false
+        } else if !isUserEditingATask && isTaskNameValid {
+            return false
+        } else {
+            return true
+        }
     }
 
     var body: some View {
@@ -224,13 +234,11 @@ struct Ejercicio5ViewSheet: View {
                     if !isUserEditingATask {
                         onSave(MyTask3(name: cleanTitle, priority: priority))
                     } else {
-                        if isTempTaskNameValid {
-                            guard let _tempTask = Binding($tempTask) else {
-                                return
-                            }
-                            _tempTask.wrappedValue.name = cleanTitle
-                            _tempTask.wrappedValue.priority = priority
-                            onSave(_tempTask.wrappedValue)
+                        if isTaskNameValid {
+                            guard var task = tempTask else { return }
+                            task.name = cleanTitle
+                            task.priority = priority
+                            onSave(task)
                         }
                     }
 
@@ -247,10 +255,7 @@ struct Ejercicio5ViewSheet: View {
                         .shadow(radius: 5)
                         .padding(.top, 20)
                 }
-                .disabled(
-                    isUserEditingATask
-                        ? !isTempTaskNameValid : !isNewTaskTitleValid
-                )
+                .disabled(buttonDisability)
                 .opacity(buttonOpacity)
 
                 Button {
@@ -269,10 +274,10 @@ struct Ejercicio5ViewSheet: View {
 
                 if isUserEditingATask {
                     Button {
-                        userIsDeleting = true
                         messageIsShown = true
-                        guard let _tempTask = Binding($tempTask) else { return }
-                        onDelete(_tempTask.wrappedValue)
+                        userIsDeleting = true
+                        guard let task = tempTask else { return }
+                        onDelete(task)
                         dismiss()
                     } label: {
                         Text("Delete")
