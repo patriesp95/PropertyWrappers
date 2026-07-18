@@ -12,11 +12,11 @@ struct Ejercicio5View: View {
     @State private var tasks: [MyTask3] = []
     @State private var sheetMode: TaskSheetMode?
     @State private var lastAction: TaskAction?
-    
+
     private var isTaskListEmpty: Bool {
         tasks.isEmpty
     }
-    
+
     private var taskPerformance: String {
         switch lastAction {
         case .created:
@@ -29,20 +29,20 @@ struct Ejercicio5View: View {
             ""
         }
     }
-    
+
     private var taskPerformanceButtonColor: Color {
         switch lastAction {
-            case .created:
-                .green.opacity(0.9)
-            case .updated:
-                .blue.opacity(0.9)
-            case .deleted:
-                .red.opacity(0.9)
-            case nil:
-                .clear
+        case .created:
+            .green.opacity(0.9)
+        case .updated:
+            .blue.opacity(0.9)
+        case .deleted:
+            .red.opacity(0.9)
+        case nil:
+            .clear
         }
     }
-    
+
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -50,9 +50,9 @@ struct Ejercicio5View: View {
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
-                
+
                 Spacer()
-                
+
                 Button {
                     sheetMode = .create
                 } label: {
@@ -73,7 +73,7 @@ struct Ejercicio5View: View {
                                 Text(task.name)
                                     .padding()
                             }
-                            
+
                             if task.priority {
                                 Image(systemName: "star.fill")
                                     .foregroundStyle(.yellow)
@@ -98,8 +98,9 @@ struct Ejercicio5View: View {
                         tasks.removeAll { $0.id == task.id }
                     },
                     onSave: { task in
-                        if let index = tasks.firstIndex(where: { $0.id == task.id })
-                        {
+                        if let index = tasks.firstIndex(where: {
+                            $0.id == task.id
+                        }) {
                             tasks[index] = task
                         } else {
                             lastAction = .created
@@ -115,8 +116,9 @@ struct Ejercicio5View: View {
                         tasks.removeAll { $0.id == task.id }
                     },
                     onSave: { task in
-                        if let index = tasks.firstIndex(where: { $0.id == task.id })
-                        {
+                        if let index = tasks.firstIndex(where: {
+                            $0.id == task.id
+                        }) {
                             lastAction = .updated
                             tasks[index] = task
                         } else {
@@ -147,7 +149,7 @@ struct Ejercicio5View: View {
                         )
                     )
             }
-            
+
         }
         .animation(.easeInOut(duration: 0.3), value: lastAction)
         .onChange(of: lastAction) { _, newValue in
@@ -156,10 +158,10 @@ struct Ejercicio5View: View {
                     try? await Task.sleep(for: .seconds(1.5))
                     lastAction = nil
                 }
-                
+
             }
         }
-        
+
     }
 }
 
@@ -167,24 +169,24 @@ struct Ejercicio5ViewSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onDelete: (MyTask3) -> Void
     let onSave: (MyTask3) -> Void
-    
-    let tempTask: MyTask3?
-    
+
+    var tempTask: MyTask3?
+
     @State private var title: String = ""
     @State private var priority: Bool = false
-    
+
     private var cleanTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
-    
+
     private var isTaskNameValid: Bool {
         !cleanTitle.isEmpty
     }
-    
+
     private var isUserEditingATask: Bool {
         tempTask != nil
     }
-    
+
     var buttonOpacity: Double {
         if isTaskNameValid {
             return 1
@@ -192,15 +194,15 @@ struct Ejercicio5ViewSheet: View {
             return 0.5
         }
     }
-    
-    var buttonDisability: Bool {        
+
+    var buttonDisability: Bool {
         if isTaskNameValid {
             return false
         } else {
             return true
         }
     }
-    
+
     var buttonNaming: String {
         if isUserEditingATask {
             return "Edit your task"
@@ -208,7 +210,7 @@ struct Ejercicio5ViewSheet: View {
             return "Add a task"
         }
     }
-    
+
     var saveButtonNaming: String {
         if isUserEditingATask {
             return "Save Changes"
@@ -216,7 +218,7 @@ struct Ejercicio5ViewSheet: View {
             return "Save"
         }
     }
-    
+
     var body: some View {
         VStack {
             VStack(spacing: 20) {
@@ -224,31 +226,34 @@ struct Ejercicio5ViewSheet: View {
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
-                
+
                 TextField("Name of the task", text: $title)
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.default)
                     .textInputAutocapitalization(.sentences)
                     .autocorrectionDisabled()
-                
+
                 Toggle(isOn: $priority) {
                     Text("Priority")
                 }
                 .toggleStyle(.switch)
-                
+
                 Button {
-                    if !isUserEditingATask {
-                        onSave(MyTask3(name: cleanTitle, priority: priority))
+                    let taskToSave: MyTask3
+                    if var tempTask {
+                        tempTask.name = cleanTitle
+                        tempTask.priority = priority
+                        taskToSave = tempTask
                     } else {
-                        if isTaskNameValid {
-                            guard var tempTask else { return }
-                            tempTask.name = cleanTitle
-                            tempTask.priority = priority
-                            onSave(tempTask)
-                        }
+                        taskToSave = MyTask3 (
+                            name: cleanTitle,
+                            priority: priority
+                        )
                     }
-                    dismiss()
                     
+                    onSave(taskToSave)
+                    dismiss()
+
                 } label: {
                     Text(saveButtonNaming)
                         .frame(maxWidth: .infinity)
@@ -261,7 +266,7 @@ struct Ejercicio5ViewSheet: View {
                 }
                 .disabled(buttonDisability)
                 .opacity(buttonOpacity)
-                
+
                 Button {
                     dismiss()
                 } label: {
@@ -274,12 +279,13 @@ struct Ejercicio5ViewSheet: View {
                         .shadow(radius: 5)
                         .padding(.top, 20)
                 }
-                
+
                 if isUserEditingATask {
                     Button {
-                        guard let tempTask else { return }
-                        onDelete(tempTask)
-                        dismiss()
+                        if let tempTask {
+                            onDelete(tempTask)
+                            dismiss()
+                        }
                     } label: {
                         Text("Delete")
                             .frame(maxWidth: .infinity)
@@ -291,22 +297,22 @@ struct Ejercicio5ViewSheet: View {
                             .padding(.top, 20)
                     }
                 }
-                
+
                 Spacer()
-                
+
             }
             .padding([.horizontal, .vertical])
-            
+
             Spacer()
-            
+
         }
         .onAppear {
             title = tempTask?.name ?? ""
             priority = tempTask?.priority ?? false
         }
-        
+
     }
-    
+
 }
 
 struct MyTask3: Identifiable, Hashable {
@@ -318,12 +324,12 @@ struct MyTask3: Identifiable, Hashable {
 enum TaskSheetMode: Identifiable, Equatable {
     case create
     case edit(MyTask3)
-    
+
     var id: String {
         switch self {
         case .create:
             "create"
-            
+
         case .edit(let task):
             task.id.uuidString
         }
