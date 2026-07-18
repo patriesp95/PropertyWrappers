@@ -12,7 +12,9 @@ struct ContentView: View {
         VStack {
             Ejercicio5View()
         }
-        .padding()
+        .ignoresSafeArea(.all, edges: [.leading, .trailing, .bottom])
+        .padding(.top, 5)
+
     }
 }
 

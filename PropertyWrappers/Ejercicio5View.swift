@@ -8,67 +8,66 @@
 import SwiftUI
 
 struct Ejercicio5View: View {
-
+    
     @State private var tasks: [MyTask3] = [
         MyTask3(name: "Go Shopping", priority: false),
         MyTask3(name: "Go to the grocery store", priority: true),
     ]
-
+        
     @State private var tempTask: MyTask3?
-
     @State private var showingSheet: Bool = false
     @State private var showSuccessMessage: Bool = false
+    
     @State private var isEditing: Bool = false
     @State private var isDeleting: Bool = false
-
+    @State private var isCreating: Bool = false
+    
+    @State private var sheetMode: TaskSheetMode?
+    
     private var tasksNotFound: Bool {
         tasks.isEmpty
     }
-
+    
     private var tempTaskNotFound: Bool {
         tempTask == nil
     }
     
-    private var userPerformance: String {
+    private var taskPerformance: String {
+        var taskPerformanceMessage: String = ""
         if isEditing {
-            if isDeleting {
-                "Task deleted successfully"
-            } else {
-               "Task updated successfully"
-            }
-        } else {
-            "Task added successfully"
+            taskPerformanceMessage = "Task updated successfully"
+        } else if isCreating {
+            taskPerformanceMessage =  "Task added successfully"
+        } else if isDeleting {
+            taskPerformanceMessage = "Task deleted successfully"
         }
+        return taskPerformanceMessage
     }
     
-    private var userPerformanceButtonColor: Color {
+    private var taskPerformanceButtonColor: Color {
+        var taskPerformanceButtonColor: Color = .clear
         if isEditing {
-            if isDeleting {
-                .red.opacity(0.9)
-            } else {
-                .blue.opacity(0.9)
-            }
-        } else {
-            .green.opacity(0.9)
+            taskPerformanceButtonColor = .blue.opacity(0.9)
+        } else if isCreating {
+            taskPerformanceButtonColor = .green.opacity(0.9)
+        } else if isDeleting {
+            taskPerformanceButtonColor = .red.opacity(0.9)
         }
+        return taskPerformanceButtonColor
     }
-
+    
     var body: some View {
         VStack(alignment: .leading) {
-
             HStack {
                 Text("Tasks")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
-
+                
                 Spacer()
-
+                
                 Button {
-                    isEditing = false
-                    isDeleting = false
-                    tempTask = nil
-                    showingSheet = true
+                    sheetMode = .create
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .resizable()
@@ -76,8 +75,8 @@ struct Ejercicio5View: View {
                         .frame(width: 35, height: 35)
                 }
                 .padding(.trailing, 10)
-
             }
+            .padding(.horizontal)
 
             if !tasksNotFound {
                 List {
@@ -87,7 +86,7 @@ struct Ejercicio5View: View {
                                 Text(task.name)
                                     .padding()
                             }
-
+                            
                             if task.priority {
                                 Image(systemName: "star.fill")
                                     .foregroundStyle(.yellow)
@@ -96,75 +95,94 @@ struct Ejercicio5View: View {
                         .padding(.horizontal)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            tempTask = task
-                            showingSheet = true
+                            sheetMode = .edit(task)
                         }
                     }
                 }
-
-            }
-
-        }
-        .sheet(isPresented: $showingSheet) {
-            Ejercicio5ViewSheet(
-                onDelete: { task in
-                    isDeleting = true
-                    tasks.removeAll { $0.id == task.id }
-                },
-                onSave: { task in
-                    if let index = tasks.firstIndex(where: { $0.id == task.id })
-                    {
-                        isEditing = true
-                        tasks[index] = task
-                    } else {
-                        tasks.append(task)
+                .sheet(item: $sheetMode) { mode in
+                    switch mode {
+                    case .create:
+                        Ejercicio5ViewSheet(
+                            onDelete: { task in
+                                isDeleting = false
+                                tasks.removeAll { $0.id == task.id }
+                            },
+                            onSave: { task in
+                                if let index = tasks.firstIndex(where: { $0.id == task.id })
+                                {
+                                    isEditing = false
+                                    tasks[index] = task
+                                } else {
+                                    isCreating = true
+                                    tasks.append(task)
+                                }
+                            },
+                            messageIsShown: $showSuccessMessage,
+                            tempTask: nil
+                        )
+                    case .edit(let task):
+                        Ejercicio5ViewSheet(
+                            onDelete: { task in
+                                isDeleting = true
+                                tasks.removeAll { $0.id == task.id }
+                            },
+                            onSave: { task in
+                                if let index = tasks.firstIndex(where: { $0.id == task.id })
+                                {
+                                    isEditing = true
+                                    tasks[index] = task
+                                } else {
+                                    tasks.append(task)
+                                    isCreating = false
+                                }
+                            },
+                            messageIsShown: $showSuccessMessage,
+                            tempTask: task
+                        )
                     }
-                },
-                messageIsShown: $showSuccessMessage,
-                userIsEditing: $isEditing,
-                userIsDeleting: $isDeleting,
-                tempTask: $tempTask
-            )
-            .onAppear {
-                if !tempTaskNotFound {
-                    isEditing = true
                 }
+                
+            } else {
+                Spacer()
             }
+            
         }
         .overlay(alignment: .top) {
             if showSuccessMessage {
-                Text(userPerformance)
-                .padding()
-                .background(userPerformanceButtonColor)
-                .foregroundStyle(.white)
-                .cornerRadius(10)
-                .shadow(radius: 5)
-                .padding(.top, 20)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .top).combined(
-                            with: .opacity
-                        ),
-                        removal: .move(edge: .leading).combined(
-                            with: .opacity
+                Text(taskPerformance)
+                    .padding()
+                    .background(taskPerformanceButtonColor)
+                    .foregroundStyle(.white)
+                    .cornerRadius(10)
+                    .shadow(radius: 5)
+                    .padding(.top, 20)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .top).combined(
+                                with: .opacity
+                            ),
+                            removal: .move(edge: .leading).combined(
+                                with: .opacity
+                            )
                         )
                     )
-                )
             }
-
+            
         }
         .animation(.easeInOut(duration: 1.2), value: showSuccessMessage)
         .onChange(of: showSuccessMessage) { _, newValue in
             if newValue {
                 Task {
                     try? await Task.sleep(for: .seconds(0.5))
+                    isEditing = false
+                    isDeleting = false
+                    isCreating = false
                     showSuccessMessage = false
-
                 }
-
+                
             }
         }
-
+        
     }
 }
 
@@ -172,23 +190,21 @@ struct Ejercicio5ViewSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onDelete: (MyTask3) -> Void
     let onSave: (MyTask3) -> Void
-
+    
     @Binding var messageIsShown: Bool
-    @Binding var userIsEditing: Bool
-    @Binding var userIsDeleting: Bool
-    @Binding var tempTask: MyTask3?
-
+    let tempTask: MyTask3?
+    
     @State var title: String = ""
     @State var priority: Bool = false
-
+    
     var isTaskNameValid: Bool {
         !title.isEmpty
     }
-
+    
     var isUserEditingATask: Bool {
         tempTask != nil
     }
-
+    
     var buttonOpacity: Double {
         if isUserEditingATask {
             return 1
@@ -208,45 +224,63 @@ struct Ejercicio5ViewSheet: View {
             return true
         }
     }
-
+    
+    var buttonNaming: String {
+        if isUserEditingATask {
+            return "Edit your task"
+        } else {
+            return "Add a task"
+        }
+    }
+    
+    var saveButtonNaming: String {
+        if isUserEditingATask {
+            return "Save Changes"
+        } else {
+            return "Save"
+        }
+    }
+    
     var body: some View {
         VStack {
             VStack(spacing: 20) {
-                Text(isUserEditingATask ? "Edit your task" : "Add a task")
+                Text(buttonNaming)
                     .font(.title)
                     .fontWeight(.bold)
                     .padding()
-
+                
                 TextField("Name of the task", text: $title)
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.default)
                     .textContentType(.name)
                     .textInputAutocapitalization(.sentences)
                     .autocorrectionDisabled()
-
+                
                 Toggle(isOn: $priority) {
                     Text("Is prioritary")
                 }
                 .toggleStyle(.switch)
-
+                
                 Button {
-                    let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let cleanTitle = title.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
                     if !isUserEditingATask {
                         onSave(MyTask3(name: cleanTitle, priority: priority))
                     } else {
                         if isTaskNameValid {
-                            guard var task = tempTask else { return }
-                            task.name = cleanTitle
-                            task.priority = priority
-                            onSave(task)
+                            guard var tempTask else { return }
+                            tempTask.name = cleanTitle
+                            tempTask.priority = priority
+                            onSave(tempTask)
                         }
                     }
-
+                    
                     messageIsShown = true
                     dismiss()
-
+                    
                 } label: {
-                    Text(isUserEditingATask ? "Save Changes" : "Save")
+                    Text(saveButtonNaming)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(.green.opacity(0.9))
@@ -257,7 +291,7 @@ struct Ejercicio5ViewSheet: View {
                 }
                 .disabled(buttonDisability)
                 .opacity(buttonOpacity)
-
+                
                 Button {
                     messageIsShown = false
                     dismiss()
@@ -271,13 +305,12 @@ struct Ejercicio5ViewSheet: View {
                         .shadow(radius: 5)
                         .padding(.top, 20)
                 }
-
+                
                 if isUserEditingATask {
                     Button {
                         messageIsShown = true
-                        userIsDeleting = true
-                        guard let task = tempTask else { return }
-                        onDelete(task)
+                        guard let tempTask else { return }
+                        onDelete(tempTask)
                         dismiss()
                     } label: {
                         Text("Delete")
@@ -290,22 +323,22 @@ struct Ejercicio5ViewSheet: View {
                             .padding(.top, 20)
                     }
                 }
-
+                
                 Spacer()
-
+                
             }
             .padding([.horizontal, .vertical])
-
+            
             Spacer()
-
+            
         }
         .onAppear {
             title = tempTask?.name ?? ""
             priority = tempTask?.priority ?? false
         }
-
+        
     }
-
+    
 }
 
 struct MyTask3: Identifiable, Hashable {
@@ -314,7 +347,21 @@ struct MyTask3: Identifiable, Hashable {
     var priority: Bool
 }
 
+enum TaskSheetMode: Identifiable, Equatable {
+    case create
+    case edit(MyTask3?)
+    
+    var id: String {
+        switch self {
+        case .create:
+            "create"
+            
+        case .edit(let task):
+            task?.id.uuidString ?? ""
+        }
+    }
+}
+
 #Preview {
     Ejercicio5View()
 }
-
