@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct Ejercicio5View: View {
+//    
+//    @State private var tasks: [MyTask3] = [
+//        MyTask3(name: "Go Shopping", priority: false),
+//        MyTask3(name: "Go to the grocery store", priority: true),
+//    ]
     
-    @State private var tasks: [MyTask3] = [
-        MyTask3(name: "Go Shopping", priority: false),
-        MyTask3(name: "Go to the grocery store", priority: true),
-    ]
-        
+    @State private var tasks: [MyTask3] = []
     @State private var tempTask: MyTask3?
     @State private var showingSheet: Bool = false
     @State private var showSuccessMessage: Bool = false
@@ -99,53 +100,51 @@ struct Ejercicio5View: View {
                         }
                     }
                 }
-                .sheet(item: $sheetMode) { mode in
-                    switch mode {
-                    case .create:
-                        Ejercicio5ViewSheet(
-                            onDelete: { task in
-                                isDeleting = false
-                                tasks.removeAll { $0.id == task.id }
-                            },
-                            onSave: { task in
-                                if let index = tasks.firstIndex(where: { $0.id == task.id })
-                                {
-                                    isEditing = false
-                                    tasks[index] = task
-                                } else {
-                                    isCreating = true
-                                    tasks.append(task)
-                                }
-                            },
-                            messageIsShown: $showSuccessMessage,
-                            tempTask: nil
-                        )
-                    case .edit(let task):
-                        Ejercicio5ViewSheet(
-                            onDelete: { task in
-                                isDeleting = true
-                                tasks.removeAll { $0.id == task.id }
-                            },
-                            onSave: { task in
-                                if let index = tasks.firstIndex(where: { $0.id == task.id })
-                                {
-                                    isEditing = true
-                                    tasks[index] = task
-                                } else {
-                                    tasks.append(task)
-                                    isCreating = false
-                                }
-                            },
-                            messageIsShown: $showSuccessMessage,
-                            tempTask: task
-                        )
-                    }
-                }
-                
             } else {
                 Spacer()
             }
-            
+        }
+        .sheet(item: $sheetMode) { mode in
+            switch mode {
+            case .create:
+                Ejercicio5ViewSheet(
+                    onDelete: { task in
+                        isDeleting = false
+                        tasks.removeAll { $0.id == task.id }
+                    },
+                    onSave: { task in
+                        if let index = tasks.firstIndex(where: { $0.id == task.id })
+                        {
+                            isEditing = false
+                            tasks[index] = task
+                        } else {
+                            isCreating = true
+                            tasks.append(task)
+                        }
+                    },
+                    messageIsShown: $showSuccessMessage,
+                    tempTask: nil
+                )
+            case .edit(let task):
+                Ejercicio5ViewSheet(
+                    onDelete: { task in
+                        isDeleting = true
+                        tasks.removeAll { $0.id == task.id }
+                    },
+                    onSave: { task in
+                        if let index = tasks.firstIndex(where: { $0.id == task.id })
+                        {
+                            isEditing = true
+                            tasks[index] = task
+                        } else {
+                            tasks.append(task)
+                            isCreating = false
+                        }
+                    },
+                    messageIsShown: $showSuccessMessage,
+                    tempTask: task
+                )
+            }
         }
         .overlay(alignment: .top) {
             if showSuccessMessage {
