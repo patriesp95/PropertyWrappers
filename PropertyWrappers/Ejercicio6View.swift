@@ -24,25 +24,6 @@ struct Ejercicio6View: View {
     var body: some View {
         NavigationStack {
             VStack {
-                HStack {
-                    Text("Projects")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .padding()
-
-                    Spacer()
-
-                    Button {
-                        showingSheet = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
-                    }
-                }
-                .padding(.trailing, 10)
-
                 if !store.isProjectListEmpty {
                     List($store.myProjects) { $myProject in
                         NavigationLink {
@@ -66,7 +47,6 @@ struct Ejercicio6View: View {
                                         .foregroundStyle(.yellow)
                                 }
                             }
-                            .padding(.vertical, 10)
                         }
 
                     }
@@ -81,6 +61,17 @@ struct Ejercicio6View: View {
                                 "Tap the + button to create your first project."
                             )
                         )
+                    }
+                }
+            }
+            .navigationTitle("Projects")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingSheet = true
+                    } label: {
+                        Image(systemName: "plus")
                     }
                 }
             }
