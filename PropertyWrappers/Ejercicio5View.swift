@@ -10,7 +10,6 @@ import SwiftUI
 struct Ejercicio5View: View {
 
     @State private var tasks: [MyTask3] = []
-    @State private var showSuccessMessage: Bool = false
     @State private var sheetMode: TaskSheetMode?
     @State private var lastAction: TaskAction?
     
@@ -31,7 +30,7 @@ struct Ejercicio5View: View {
         }
     }
     
-    private var taskPerformanceButtonColor: Color {        
+    private var taskPerformanceButtonColor: Color {
         switch lastAction {
             case .created:
                 .green.opacity(0.9)
@@ -107,7 +106,6 @@ struct Ejercicio5View: View {
                             tasks.append(task)
                         }
                     },
-                    messageIsShown: $lastAction,
                     tempTask: nil
                 )
             case .edit(let task):
@@ -125,7 +123,6 @@ struct Ejercicio5View: View {
                             tasks.append(task)
                         }
                     },
-                    messageIsShown: $lastAction,
                     tempTask: task
                 )
             }
@@ -152,11 +149,11 @@ struct Ejercicio5View: View {
             }
             
         }
-        .animation(.easeInOut(duration: 2), value: lastAction)
+        .animation(.easeInOut(duration: 0.3), value: lastAction)
         .onChange(of: lastAction) { _, newValue in
             if newValue != nil {
                 Task {
-                    try? await Task.sleep(for: .seconds(0.5))
+                    try? await Task.sleep(for: .seconds(1.5))
                     lastAction = nil
                 }
                 
@@ -171,7 +168,6 @@ struct Ejercicio5ViewSheet: View {
     let onDelete: (MyTask3) -> Void
     let onSave: (MyTask3) -> Void
     
-    @Binding var messageIsShown: TaskAction?
     let tempTask: MyTask3?
     
     @State private var title: String = ""
