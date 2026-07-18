@@ -8,12 +8,7 @@
 import SwiftUI
 
 struct Ejercicio5View: View {
-//    
-//    @State private var tasks: [MyTask3] = [
-//        MyTask3(name: "Go Shopping", priority: false),
-//        MyTask3(name: "Go to the grocery store", priority: true),
-//    ]
-    
+
     @State private var tasks: [MyTask3] = []
     @State private var tempTask: MyTask3?
     @State private var showingSheet: Bool = false
@@ -196,8 +191,12 @@ struct Ejercicio5ViewSheet: View {
     @State var title: String = ""
     @State var priority: Bool = false
     
+    private var cleanTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
     var isTaskNameValid: Bool {
-        !title.isEmpty
+        !cleanTitle.isEmpty
     }
     
     var isUserEditingATask: Bool {
@@ -205,19 +204,15 @@ struct Ejercicio5ViewSheet: View {
     }
     
     var buttonOpacity: Double {
-        if isUserEditingATask {
-            return 1
-        } else if !isUserEditingATask && isTaskNameValid {
+        if isTaskNameValid {
             return 1
         } else {
             return 0.5
         }
     }
     
-    var buttonDisability: Bool {
-        if isUserEditingATask {
-            return false
-        } else if !isUserEditingATask && isTaskNameValid {
+    var buttonDisability: Bool {        
+        if isTaskNameValid {
             return false
         } else {
             return true
@@ -261,9 +256,6 @@ struct Ejercicio5ViewSheet: View {
                 .toggleStyle(.switch)
                 
                 Button {
-                    let cleanTitle = title.trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    )
                     if !isUserEditingATask {
                         onSave(MyTask3(name: cleanTitle, priority: priority))
                     } else {
