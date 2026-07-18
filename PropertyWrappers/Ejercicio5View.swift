@@ -10,46 +10,38 @@ import SwiftUI
 struct Ejercicio5View: View {
 
     @State private var tasks: [MyTask3] = []
-    @State private var tempTask: MyTask3?
-    @State private var showingSheet: Bool = false
     @State private var showSuccessMessage: Bool = false
-    
-    @State private var isEditing: Bool = false
-    @State private var isDeleting: Bool = false
-    @State private var isCreating: Bool = false
-    
     @State private var sheetMode: TaskSheetMode?
+    @State private var lastAction: TaskAction?
     
-    private var tasksNotFound: Bool {
+    private var isTaskListEmpty: Bool {
         tasks.isEmpty
     }
     
-    private var tempTaskNotFound: Bool {
-        tempTask == nil
-    }
-    
     private var taskPerformance: String {
-        var taskPerformanceMessage: String = ""
-        if isEditing {
-            taskPerformanceMessage = "Task updated successfully"
-        } else if isCreating {
-            taskPerformanceMessage =  "Task added successfully"
-        } else if isDeleting {
-            taskPerformanceMessage = "Task deleted successfully"
+        switch lastAction {
+        case .created:
+            "Task added successfully"
+        case .updated:
+            "Task updated successfully"
+        case .deleted:
+            "Task deleted successfully"
+        case nil:
+            ""
         }
-        return taskPerformanceMessage
     }
     
-    private var taskPerformanceButtonColor: Color {
-        var taskPerformanceButtonColor: Color = .clear
-        if isEditing {
-            taskPerformanceButtonColor = .blue.opacity(0.9)
-        } else if isCreating {
-            taskPerformanceButtonColor = .green.opacity(0.9)
-        } else if isDeleting {
-            taskPerformanceButtonColor = .red.opacity(0.9)
+    private var taskPerformanceButtonColor: Color {        
+        switch lastAction {
+            case .created:
+                .green.opacity(0.9)
+            case .updated:
+                .blue.opacity(0.9)
+            case .deleted:
+                .red.opacity(0.9)
+            case nil:
+                .clear
         }
-        return taskPerformanceButtonColor
     }
     
     var body: some View {
@@ -74,7 +66,7 @@ struct Ejercicio5View: View {
             }
             .padding(.horizontal)
 
-            if !tasksNotFound {
+            if !isTaskListEmpty {
                 List {
                     ForEach(tasks) { task in
                         HStack {
@@ -104,45 +96,42 @@ struct Ejercicio5View: View {
             case .create:
                 Ejercicio5ViewSheet(
                     onDelete: { task in
-                        isDeleting = false
                         tasks.removeAll { $0.id == task.id }
                     },
                     onSave: { task in
                         if let index = tasks.firstIndex(where: { $0.id == task.id })
                         {
-                            isEditing = false
                             tasks[index] = task
                         } else {
-                            isCreating = true
+                            lastAction = .created
                             tasks.append(task)
                         }
                     },
-                    messageIsShown: $showSuccessMessage,
+                    messageIsShown: $lastAction,
                     tempTask: nil
                 )
             case .edit(let task):
                 Ejercicio5ViewSheet(
                     onDelete: { task in
-                        isDeleting = true
+                        lastAction = .deleted
                         tasks.removeAll { $0.id == task.id }
                     },
                     onSave: { task in
                         if let index = tasks.firstIndex(where: { $0.id == task.id })
                         {
-                            isEditing = true
+                            lastAction = .updated
                             tasks[index] = task
                         } else {
                             tasks.append(task)
-                            isCreating = false
                         }
                     },
-                    messageIsShown: $showSuccessMessage,
+                    messageIsShown: $lastAction,
                     tempTask: task
                 )
             }
         }
         .overlay(alignment: .top) {
-            if showSuccessMessage {
+            if lastAction != nil {
                 Text(taskPerformance)
                     .padding()
                     .background(taskPerformanceButtonColor)
@@ -163,15 +152,12 @@ struct Ejercicio5View: View {
             }
             
         }
-        .animation(.easeInOut(duration: 1.2), value: showSuccessMessage)
-        .onChange(of: showSuccessMessage) { _, newValue in
-            if newValue {
+        .animation(.easeInOut(duration: 2), value: lastAction)
+        .onChange(of: lastAction) { _, newValue in
+            if newValue != nil {
                 Task {
                     try? await Task.sleep(for: .seconds(0.5))
-                    isEditing = false
-                    isDeleting = false
-                    isCreating = false
-                    showSuccessMessage = false
+                    lastAction = nil
                 }
                 
             }
@@ -185,21 +171,21 @@ struct Ejercicio5ViewSheet: View {
     let onDelete: (MyTask3) -> Void
     let onSave: (MyTask3) -> Void
     
-    @Binding var messageIsShown: Bool
+    @Binding var messageIsShown: TaskAction?
     let tempTask: MyTask3?
     
-    @State var title: String = ""
-    @State var priority: Bool = false
+    @State private var title: String = ""
+    @State private var priority: Bool = false
     
     private var cleanTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
-    var isTaskNameValid: Bool {
+    private var isTaskNameValid: Bool {
         !cleanTitle.isEmpty
     }
     
-    var isUserEditingATask: Bool {
+    private var isUserEditingATask: Bool {
         tempTask != nil
     }
     
@@ -246,12 +232,11 @@ struct Ejercicio5ViewSheet: View {
                 TextField("Name of the task", text: $title)
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.default)
-                    .textContentType(.name)
                     .textInputAutocapitalization(.sentences)
                     .autocorrectionDisabled()
                 
                 Toggle(isOn: $priority) {
-                    Text("Is prioritary")
+                    Text("Priority")
                 }
                 .toggleStyle(.switch)
                 
@@ -266,8 +251,6 @@ struct Ejercicio5ViewSheet: View {
                             onSave(tempTask)
                         }
                     }
-                    
-                    messageIsShown = true
                     dismiss()
                     
                 } label: {
@@ -284,7 +267,6 @@ struct Ejercicio5ViewSheet: View {
                 .opacity(buttonOpacity)
                 
                 Button {
-                    messageIsShown = false
                     dismiss()
                 } label: {
                     Text("Cancel")
@@ -299,7 +281,6 @@ struct Ejercicio5ViewSheet: View {
                 
                 if isUserEditingATask {
                     Button {
-                        messageIsShown = true
                         guard let tempTask else { return }
                         onDelete(tempTask)
                         dismiss()
@@ -333,14 +314,14 @@ struct Ejercicio5ViewSheet: View {
 }
 
 struct MyTask3: Identifiable, Hashable {
-    var id: UUID = UUID()
+    let id: UUID = UUID()
     var name: String
     var priority: Bool
 }
 
 enum TaskSheetMode: Identifiable, Equatable {
     case create
-    case edit(MyTask3?)
+    case edit(MyTask3)
     
     var id: String {
         switch self {
@@ -348,9 +329,15 @@ enum TaskSheetMode: Identifiable, Equatable {
             "create"
             
         case .edit(let task):
-            task?.id.uuidString ?? ""
+            task.id.uuidString
         }
     }
+}
+
+enum TaskAction {
+    case created
+    case updated
+    case deleted
 }
 
 #Preview {
