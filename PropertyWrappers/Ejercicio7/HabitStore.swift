@@ -30,4 +30,8 @@ final class HabitStore {
     var pendingCount: Int {
         habits.count - completedCount
     }
+    
+    func deleteHabits(at offsets: IndexSet) {
+        habits.remove(atOffsets: offsets)
+    }
 }

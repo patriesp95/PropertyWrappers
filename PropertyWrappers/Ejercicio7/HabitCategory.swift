@@ -10,5 +10,6 @@ enum HabitCategory: String, CaseIterable, Identifiable {
     case health
     case study
     case personal
+    case unasigned
     var id: Self { self }
 }

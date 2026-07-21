@@ -10,7 +10,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         VStack {
-            Ejercicio6View()
+            Ejercicio7View()
         }
         .ignoresSafeArea(.all, edges: [.leading, .trailing, .bottom])
         .padding(.top, 5)

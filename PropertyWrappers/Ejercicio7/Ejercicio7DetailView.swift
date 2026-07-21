@@ -12,12 +12,12 @@ struct Ejercicio7DetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Project Details")
+            Text("Habit's Details")
                 .font(.title)
                 .fontWeight(.bold)
             
             
-            TextField("Name of the habit", text: $habit.name)
+            TextField("Habit's name", text: $habit.name)
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.default)
                 .textInputAutocapitalization(.sentences)
